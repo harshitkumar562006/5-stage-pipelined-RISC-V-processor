@@ -113,6 +113,9 @@ module top (
     assign RS1_VAL = rs1_val; // ensure keep (example, use keep)
     // Control and immediate
     imm_gen IMM (.instr(IF_ID_instr_w), .imm_out(imm));
+    // funct3 / funct7[5] straight from the instruction (not from imm)
+    wire [2:0] funct3   = IF_ID_instr_w[14:12];
+    wire       funct7_5 = IF_ID_instr_w[30];
     control_unit CU (
         .opcode(IF_ID_instr_w[6:0]),
         .MemtoReg(MemtoReg), .RegWrite(RegWrite),
@@ -133,10 +136,15 @@ module top (
 
 
     // ID/EX Pipeline Register
+    wire [4:0] ID_EX_rs1_addr, ID_EX_rs2_addr;
+    wire [2:0] ID_EX_funct3;
+    wire       ID_EX_funct7_5;
     id_ex_reg ID_EX (
-        .clk(clk), .reset(reset), .flush(branch_taken),
+        .clk(clk), .reset(reset), .flush(branch_taken || stall),
         .pc_in(IF_ID_PC),
         .rs1_in(rs1_val), .rs2_in(rs2_val),
+        .rs1_addr_in(rs1_addr), .rs2_addr_in(rs2_addr),
+        .funct3_in(funct3), .funct7_5_in(funct7_5),
         .imm_in(imm),
         .rd_in(rd_addr),
         .ALUOp_in(ALUOp), .ALUSrc_in(ALUSrc),
@@ -146,6 +154,8 @@ module top (
         .Jump_in(Jump), .Jalr_in(Jalr),
         .pc_out(ID_EX_PC),
         .rs1_out(ID_EX_rs1), .rs2_out(ID_EX_rs2),
+        .rs1_addr_out(ID_EX_rs1_addr), .rs2_addr_out(ID_EX_rs2_addr),
+        .funct3_out(ID_EX_funct3), .funct7_5_out(ID_EX_funct7_5),
         .imm_out(ID_EX_imm), .rd_out(ID_EX_rd),
         .ALUOp_out(ID_EX_ALUOp), .ALUSrc_out(ID_EX_ALUSrc),
         .Branch_out(ID_EX_Branch),
@@ -155,14 +165,15 @@ module top (
         .Jump_out(ID_EX_Jump), .Jalr_out(ID_EX_Jalr)
     );
 
+    wire [2:0] EX_MEM_funct3;
+
     // Forwarding Unit
     forwarding_unit FW (
         .EX_MEM_RegWrite(EX_MEM_RegWrite), .MEM_WB_RegWrite(MEM_WB_RegWrite),
         .EX_MEM_rd(EX_MEM_rd), .MEM_WB_rd(MEM_WB_rd),
-        .ID_EX_rs1(ID_EX_rd), .ID_EX_rs2(ID_EX_rd),
+        .ID_EX_rs1(ID_EX_rs1_addr), .ID_EX_rs2(ID_EX_rs2_addr),
         .ForwardA(ForwardA), .ForwardB(ForwardB)
     );
-    // (Also instantiate correct ID_EX_rs1/rs2 forwarding if needed)
 
     // ALU operand selection (with forwarding)
     wire [31:0] ALU_in2_reg;
@@ -180,7 +191,7 @@ assign ALU_in2 = ID_EX_ALUSrc ? ID_EX_imm : ALU_in2_reg;
 
     // ALU Control and Execution
     alu_control ALUCTRL (
-        .ALUOp(ID_EX_ALUOp), .funct3(ID_EX_imm[2:0]), .funct7_5(ID_EX_imm[10]),
+        .ALUOp(ID_EX_ALUOp), .funct3(ID_EX_funct3), .funct7_5(ID_EX_funct7_5),
         .ALU_control(ALU_control)
     );
     alu ALU (
@@ -193,8 +204,7 @@ assign ALU_in2 = ID_EX_ALUSrc ? ID_EX_imm : ALU_in2_reg;
     assign branch_taken  = (ID_EX_Branch && zero) || ID_EX_Jump || ID_EX_Jalr;
 
     // PC Update (with stall/flush)
-    // stall logic not implemented; assume stall=0 for simplicity
-    assign stall = 1'b0;
+    // stall now comes from HAZ instead of being hardcoded
     assign PC_Write = ~stall;
     assign IF_ID_Write = ~stall;
     assign Control_Mux = branch_taken; // example: when flush = branch, controls = 0
@@ -212,11 +222,12 @@ assign ALU_in2 = ID_EX_ALUSrc ? ID_EX_imm : ALU_in2_reg;
     ex_mem_reg EX_MEM (
         .clk(clk), .reset(reset),
         .alu_result_in(alu_result), .rs2_in(ALU_in2_reg),
-        .rd_in(ID_EX_rd),
+        .rd_in(ID_EX_rd), .funct3_in(ID_EX_funct3),
         .MemRead_in(ID_EX_MemRead), .MemWrite_in(ID_EX_MemWrite),
         .RegWrite_in(ID_EX_RegWrite), .MemtoReg_in(ID_EX_MemtoReg),
         .alu_result_out(EX_MEM_alu_result), .rs2_out(EX_MEM_rs2),
-        .rd_out(EX_MEM_rd), .MemRead_out(EX_MEM_MemRead),
+        .rd_out(EX_MEM_rd), .funct3_out(EX_MEM_funct3),
+        .MemRead_out(EX_MEM_MemRead),
         .MemWrite_out(EX_MEM_MemWrite), .RegWrite_out(EX_MEM_RegWrite),
         .MemtoReg_out(EX_MEM_MemtoReg)
     );
@@ -226,7 +237,7 @@ assign ALU_in2 = ID_EX_ALUSrc ? ID_EX_imm : ALU_in2_reg;
     assign mem_write_data = EX_MEM_rs2;
     data_mem DMEM (
         .clk(clk), .addr(mem_addr), .write_data(mem_write_data),
-        .we(EX_MEM_MemWrite), .func3(ID_EX_imm[2:0]),
+        .we(EX_MEM_MemWrite), .func3(EX_MEM_funct3),
         .data_out(mem_read_data)
     );
 
