@@ -8,7 +8,7 @@ module reg_file (
 );
     reg [31:0] regs [0:31];
     integer i;
-    // Initialize registers (x0 = 0)
+    // registers to 0
     initial begin
         for (i = 0; i < 32; i = i+1) regs[i] = 32'b0;
     end
@@ -19,7 +19,7 @@ module reg_file (
             regs[wa] <= wd;
     end
 
-    // Asynchronous reads (combinational)
+    // Asynchronous reads
     assign rd1 = regs[ra1]; 
     assign rd2 = regs[ra2];
 endmodule
