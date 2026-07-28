@@ -11,7 +11,7 @@ module instr_mem (
     end
 
     always @(posedge clk) begin
-        // Word-aligned fetch: ignore bottom 2 bits of addr
+     
         instr <= mem[addr[11:2]];
     end
 endmodule
