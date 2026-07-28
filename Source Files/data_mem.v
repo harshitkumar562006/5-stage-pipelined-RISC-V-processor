@@ -3,19 +3,19 @@ module data_mem (
     input  wire [31:0] addr,
     input  wire [31:0] write_data,
     input  wire        we,
-    input  wire [2:0]  func3,    // 000=SB, 001=SH, 010=SW; 100=LB,101=LH,110=LW, etc.
+    input  wire [2:0]  func3,    // 000=Store Byte, 001=Store Half Word, 010=Store Word
     output reg [31:0]  data_out
 );
-    // 1024 x 32-bit data memory
+    // 1024 x 32-bit memory
     reg [31:0] mem [0:1023];
 
     always @(posedge clk) begin
         if (we) begin
             case (func3)
-                3'b000: mem[addr[11:2]][ 7: 0] <= write_data[ 7: 0]; // SB
-                3'b001: mem[addr[11:2]][15: 0] <= write_data[15: 0]; // SH
-                3'b010: mem[addr[11:2]]        <= write_data;       // SW
-                default: /* no change */;
+                3'b000: mem[addr[11:2]][ 7: 0] <= write_data[ 7: 0]; // Store Byte
+                3'b001: mem[addr[11:2]][15: 0] <= write_data[15: 0]; // Store Half Word
+                3'b010: mem[addr[11:2]]        <= write_data;       // Store Word
+                default: ;
             endcase
         end
     end
