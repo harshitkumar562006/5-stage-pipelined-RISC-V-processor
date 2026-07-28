@@ -22,15 +22,15 @@ module data_mem (
 
     always @(*) begin
         case (func3)
-            3'b000: // LB (sign-extend byte)
+            3'b000: // sign-extend byte
                 data_out = {{24{mem[addr[11:2]][7]}}, mem[addr[11:2]][7:0]};
-            3'b001: // LH (sign-extend halfword)
+            3'b001: // sign-extend halfword
                 data_out = {{16{mem[addr[11:2]][15]}}, mem[addr[11:2]][15:0]};
-            3'b010: // LW (word)
+            3'b010: // word
                 data_out = mem[addr[11:2]];
-            3'b100: // LBU (zero-extend byte)
+            3'b100: // zero-extend byte
                 data_out = {24'b0, mem[addr[11:2]][7:0]};
-            3'b101: // LHU (zero-extend half)
+            3'b101: // zero-extend half
                 data_out = {16'b0, mem[addr[11:2]][15:0]};
             default:
                 data_out = mem[addr[11:2]];
