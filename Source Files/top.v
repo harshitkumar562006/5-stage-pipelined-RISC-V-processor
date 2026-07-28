@@ -2,7 +2,6 @@ module top (
     input  wire        clk,
     input  wire        reset,
 
-    // Debug Outputs:
     output [31:0] PC,
     output [31:0] PC_plus4,
     output [31:0] instr_IF,
@@ -19,7 +18,6 @@ module top (
     output        Jump,
     output        Jalr,
 
-    // ALU and Related
     output [31:0] ID_EX_rs1,
     output [31:0] ID_EX_rs2,
     output [31:0] ALU_in1,
@@ -39,7 +37,7 @@ module top (
     output [31:0] rs2_val,
     output [31:0] write_back_data,
 
-    // Pipeline Registers (IF/ID, ID/EX, EX/MEM, MEM/WB contents)
+    // Pipeline Registers 
     output [31:0] IF_ID_PC,
     output [31:0] IF_ID_instr,
     output [31:0] ID_EX_PC,
@@ -110,7 +108,7 @@ module top (
         .ra1(rs1_addr), .ra2(rs2_addr), .wa(MEM_WB_rd),
         .wd(write_back_data), .rd1(rs1_val), .rd2(rs2_val)
     );
-    assign RS1_VAL = rs1_val; // ensure keep (example, use keep)
+    assign RS1_VAL = rs1_val; 
     // Control and immediate
     imm_gen IMM (.instr(IF_ID_instr_w), .imm_out(imm));
     // funct3 / funct7[5] straight from the instruction (not from imm)
@@ -175,7 +173,7 @@ module top (
         .ForwardA(ForwardA), .ForwardB(ForwardB)
     );
 
-    // ALU operand selection (with forwarding)
+    // ALU operand selection with forwarding
     wire [31:0] ALU_in2_reg;
     assign ALU_in1 =
     (ForwardA == 2'b10) ? EX_MEM_alu_result :
@@ -204,10 +202,9 @@ assign ALU_in2 = ID_EX_ALUSrc ? ID_EX_imm : ALU_in2_reg;
     assign branch_taken  = (ID_EX_Branch && zero) || ID_EX_Jump || ID_EX_Jalr;
 
     // PC Update (with stall/flush)
-    // stall now comes from HAZ instead of being hardcoded
     assign PC_Write = ~stall;
     assign IF_ID_Write = ~stall;
-    assign Control_Mux = branch_taken; // example: when flush = branch, controls = 0
+    assign Control_Mux = branch_taken; 
     assign flush = branch_taken;
 
     always @(posedge clk or posedge reset) begin
