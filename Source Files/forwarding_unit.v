@@ -9,19 +9,19 @@ module forwarding_unit (
     output reg  [1:0]  ForwardB
 );
     always @(*) begin
-        // Default: no forwarding (00)
+        
         ForwardA = 2'b00;
         ForwardB = 2'b00;
-        // EX hazard (EX/MEM stage)
+        // EX/MEM stage Hazard
         if (EX_MEM_RegWrite && (EX_MEM_rd != 0)) begin
             if (EX_MEM_rd == ID_EX_rs1)
                 ForwardA = 2'b10; // Forward from EX_MEM
             if (EX_MEM_rd == ID_EX_rs2)
                 ForwardB = 2'b10;
         end
-        // MEM hazard (MEM/WB stage)
+        // MEM/WB stage Hazard
         if (MEM_WB_RegWrite && (MEM_WB_rd != 0)) begin
-            // Ensure not to override EX_MEM forwarding
+            
             if ((MEM_WB_rd == ID_EX_rs1) && !(EX_MEM_RegWrite && (EX_MEM_rd == ID_EX_rs1)))
                 ForwardA = 2'b01; // Forward from MEM_WB
             if ((MEM_WB_rd == ID_EX_rs2) && !(EX_MEM_RegWrite && (EX_MEM_rd == ID_EX_rs2)))
