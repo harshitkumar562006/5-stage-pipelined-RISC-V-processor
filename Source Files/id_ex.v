@@ -61,7 +61,7 @@ module id_ex_reg (
             Jump_out  <= 1'b0;
             Jalr_out  <= 1'b0;
         end else if (flush) begin
-            // Insert NOP into EX stage
+            // No operation EX stage
             pc_out    <= 32'd0;
             rs1_out   <= 32'd0;
             rs2_out   <= 32'd0;
