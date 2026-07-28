@@ -13,13 +13,12 @@ module if_id_reg (
             pc_out    <= 32'd0;
             instr_out <= 32'd0;
         end else if (flush) begin
-            // Insert NOP
+            // No Operation
             pc_out    <= 32'd0;
             instr_out <= 32'd0;
         end else if (!stall) begin
             pc_out    <= pc_in;
             instr_out <= instr_in;
         end
-        // else if stall: hold old values (no update)
     end
 endmodule
