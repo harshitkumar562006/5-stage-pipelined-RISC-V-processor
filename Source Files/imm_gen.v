@@ -5,7 +5,7 @@ module imm_gen (
     wire [6:0] opcode = instr[6:0];
     always @(*) begin
         case (opcode)
-            // U-type (LUI/AUIPC)
+            // U-type 
             7'b0010111, 7'b0110111: 
                 imm_out = {instr[31:12], 12'b0};
             // J-type (JAL)
