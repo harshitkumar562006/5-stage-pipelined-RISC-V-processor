@@ -1,7 +1,7 @@
 module imm_gen (
     input  wire [31:0] instr,
     output reg  [31:0] imm_out
-);
+); 
     wire [6:0] opcode = instr[6:0];
     always @(*) begin
         case (opcode)
